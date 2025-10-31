@@ -6,7 +6,7 @@
 #include <QGraphicsPolygonItem>
 #include <QRectF>
 #include "globalVar.h"
-
+#include "CustomPolygonItem.h"
 class RouteScene : public QGraphicsScene
 {
     Q_OBJECT
@@ -42,7 +42,7 @@ private:
     QList<QPolygonF> m_obstacles;
     QPolygonF m_corridor;
 
-    QList<QGraphicsPolygonItem*> m_obstacleItems;
+    QList<CustomPolygonItem*> m_obstacleItems;
 
     // Фиксированная зона генерации: 800x800 в центре
     QRectF m_generationArea = QRectF(-400, -400, 800, 800);

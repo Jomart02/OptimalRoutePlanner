@@ -68,7 +68,7 @@ void RouteScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
         emit dataChanged();
         redrawAll();
 
-        emit statusMessage(QString("Точка %1: (%.1f, %.1f)")
+        qDebug() << (QString("Точка %1: (%2, %3)")
                            .arg(m_waypoints.size()).arg(pt.x()).arg(pt.y()));
     }
 
@@ -77,12 +77,15 @@ void RouteScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
 void RouteScene::generateObstacles(int count)
 {
-    qDebug() << "=== ГЕНЕРАЦИЯ ПРЕПЯТСТВИЙ ===";
-    qDebug() << "Зона генерации:" << m_generationArea;
+    qDebug() << "=== ГЕНЕРАЦИЯ КАСТОМНЫХ ПРЕПЯТСТВИЙ ===";
 
-    // Очищаем старое
+    // Очистка
+    for (auto *item : m_obstacleItems) {
+        removeItem(item);
+        delete item;
+    }
+    m_obstacleItems.clear();
     m_obstacles.clear();
-    clearObstacleItems();
 
     int generated = 0;
     int attempts = 0;
@@ -92,53 +95,36 @@ void RouteScene::generateObstacles(int count)
         int vertices = QRandomGenerator::global()->bounded(4, 9);
         QPolygonF poly = generateRandomPolygon(m_generationArea, vertices);
 
-        qDebug() << "Попытка" << attempts + 1 << ": полигон с" << vertices << "вершинами";
-
         bool valid = true;
-
-        // Проверка пересечения с другими препятствиями
         for (const auto &obs : m_obstacles) {
             if (polygonsIntersect(poly, obs)) {
                 valid = false;
-                qDebug() << "  → Пересекается с существующим!";
                 break;
             }
         }
 
-        // Проверка: не содержит путевые точки
         if (valid) {
-            for (const auto &wp : m_waypoints) {
-                if (poly.containsPoint(wp, Qt::OddEvenFill)) {
-                    valid = false;
-                    qDebug() << "  → Содержит путевую точку!";
-                    break;
-                }
-            }
-        }
-
-        if (valid) {
-            // ДОБАВЛЯЕМ НА СЦЕНУ СРАЗУ
-            QGraphicsPolygonItem *item = addPolygon(
-                poly,
-                QPen(QColor(200, 30, 30), 2),
-                QBrush(QColor(220, 60, 60, 180))
-            );
+            CustomPolygonItem *item = new CustomPolygonItem(poly);
+            item->enableEditing(true);  // ← Включаем редактирование
             item->setZValue(2);
-            m_obstacleItems.append(item);
 
+            connect(item, &CustomPolygonItem::polygonChanged, this, [this, item](const QPolygonF &p) {
+                int idx = m_obstacleItems.indexOf(item);
+                if (idx != -1) m_obstacles[idx] = p;
+                emit dataChanged();
+            });
+
+            m_obstacleItems.append(item);
             m_obstacles.append(poly);
+            addItem(item);
             ++generated;
 
-            qDebug() << "  → Препятствие ДОБАВЛЕНО! Всего:" << generated;
-        } else {
-            qDebug() << "  → Отклонено";
+            qDebug() << "Препятствие" << generated << "создано и редактируемо";
         }
-
         ++attempts;
     }
 
     emit dataChanged();
-    qDebug() << QString("ИТОГ: %1 из %2").arg(generated).arg(count);
 }
 
 void RouteScene::setCorridor(const QPolygonF &corridor)
@@ -153,11 +139,16 @@ void RouteScene::clearAll()
     m_waypoints.clear();
     m_obstacles.clear();
     m_corridor.clear();
-    clearObstacleItems();
+
+    for (auto *item : m_obstacleItems) {
+        removeItem(item);
+        delete item;
+    }
+    m_obstacleItems.clear();
+
     clear();
     redrawAll();
     emit dataChanged();
-    emit statusMessage("Сцена очищена");
 }
 
 void RouteScene::clearObstacleItems()

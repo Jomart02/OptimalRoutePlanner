@@ -8,7 +8,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/QtApp/include)
-
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/QtApp/include/CustomItems)
 
 set(PROJECT_INCLUDE_DIR ./QtApp/include)
 set(PROJECT_SRC_DIR     ./QtApp/src)
@@ -17,6 +17,8 @@ set(PROJECT_UI_DIR      ./QtApp/ui)
 set(HEADERS
      ${PROJECT_INCLUDE_DIR}/MainWindow.h
      ${PROJECT_INCLUDE_DIR}/RouteScene.h
+     ${PROJECT_INCLUDE_DIR}/CustomItems/CustomPolygonItem.h 
+     ${PROJECT_INCLUDE_DIR}/CustomItems/VertexHandle.h
 )
 
 set(SOURCES
@@ -24,6 +26,8 @@ set(SOURCES
      ${PROJECT_SRC_DIR}/MainWindow.cpp
      ${PROJECT_SRC_DIR}/MainWindow.cpp
      ${PROJECT_SRC_DIR}/RouteScene.cpp
+     ${PROJECT_SRC_DIR}/CustomItems/CustomPolygonItem.cpp 
+     ${PROJECT_SRC_DIR}/CustomItems/VertexHandle.cpp
 )
 
 
