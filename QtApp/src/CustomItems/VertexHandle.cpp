@@ -1,58 +1,48 @@
 #include "VertexHandle.h"
-#include "CustomPolygonItem.h"
-#include <QBrush>
+#include <QPainter>
 #include <QPen>
+#include <QBrush>
+#include <QCursor>
 #include <QGraphicsSceneMouseEvent>
 
-VertexHandle::VertexHandle(CustomPolygonItem *parent, int index)
-    : QGraphicsEllipseItem(-8, -8, 16, 16, parent)
-    , m_polygon(parent)
-    , m_index(index)
+VertexHandle::VertexHandle(QGraphicsItem *parent)
+    : QGraphicsObject(parent)
 {
-    setBrush(QBrush(QColor(255, 200, 0)));
-    setPen(QPen(QColor(200, 100, 0), 2));
     setAcceptHoverEvents(true);
     setFlag(QGraphicsItem::ItemIsMovable, true);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
+    setCursor(Qt::SizeAllCursor);
 }
 
-void VertexHandle::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
+QRectF VertexHandle::boundingRect() const
 {
-    setBrush(QBrush(QColor(255, 255, 100)));
-    setPen(QPen(QColor(255, 150, 0), 3));
-    // setCursor(Qt::SizeAllCursor);
-    QGraphicsEllipseItem::hoverEnterEvent(event);
+    return QRectF(-HANDLE_SIZE/2, -HANDLE_SIZE/2, HANDLE_SIZE, HANDLE_SIZE);
 }
 
-void VertexHandle::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
+void VertexHandle::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
 {
-    setBrush(QBrush(QColor(255, 200, 0)));
-    setPen(QPen(QColor(200, 100, 0), 2));
-    unsetCursor();
-    QGraphicsEllipseItem::hoverLeaveEvent(event);
-}
-
-void VertexHandle::mousePressEvent(QGraphicsSceneMouseEvent *event)
-{
-    m_dragging = true;
-    m_dragStart = pos();
-    QGraphicsEllipseItem::mousePressEvent(event);
+    painter->setPen(QPen(QColor(200, 100, 0), 2));
+    painter->setBrush(QBrush(QColor(255, 200, 0)));
+    painter->drawEllipse(boundingRect());
 }
 
 void VertexHandle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (m_dragging) {
-        QPointF newPos = parentItem()->mapFromScene(event->scenePos());
-        setPos(newPos);
-    }
-    QGraphicsEllipseItem::mouseMoveEvent(event);
+    QPointF delta = event->scenePos() - event->lastScenePos();
+    setPos(pos() + delta);  // ← pos() — локальные (от родителя)
+    QGraphicsObject::mouseMoveEvent(event);
 }
 
 void VertexHandle::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (m_dragging) {
-        m_dragging = false;
-        m_polygon->updatePolygonFromHandles();
+    QGraphicsObject::mouseReleaseEvent(event);
+}
+
+QVariant VertexHandle::itemChange(GraphicsItemChange change, const QVariant &value)
+{
+    if (change == ItemPositionHasChanged) {
+        // ← localPos = pos() (локальные координаты родителя)
+        emit moved(m_index, pos());
     }
-    QGraphicsEllipseItem::mouseReleaseEvent(event);
+    return QGraphicsObject::itemChange(change, value);
 }

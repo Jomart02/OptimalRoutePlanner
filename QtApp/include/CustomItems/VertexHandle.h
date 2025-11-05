@@ -1,24 +1,29 @@
 #pragma once
-#include <QGraphicsEllipseItem>
+#include <QGraphicsObject>  
+#include <QBrush>
+#include <QPen>
 
-class CustomPolygonItem;
-
-class VertexHandle : public QGraphicsEllipseItem
+class VertexHandle : public QGraphicsObject
 {
+    Q_OBJECT
+
 public:
-    VertexHandle(CustomPolygonItem *parent, int index);
+    explicit VertexHandle(QGraphicsItem *parent = nullptr);
+    void setIndex(int index) { m_index = index; }
     int index() const { return m_index; }
 
+    QRectF boundingRect() const override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
+
+signals:
+    void moved(int index, const QPointF &localPos);  // ← Изменил: index + localPos!
+
 protected:
-    void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
-    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
 private:
-    CustomPolygonItem *m_polygon;
-    int m_index;
-    bool m_dragging = false;
-    QPointF m_dragStart;
+    int m_index = -1;
+    const qreal HANDLE_SIZE = 12.0;
 };
